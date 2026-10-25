@@ -1,0 +1,37 @@
+{# Coherent outline icon set for the eight SkyRent categories. #}
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+     stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
+     stroke-linejoin="round" aria-hidden="true" focusable="false">
+  {% if category == "Sports" %}
+    <path d="M3.6 17.2a8.4 8.4 0 1 1 16.8 0"/>
+    <path d="M12 17.2l4.4-5.1"/>
+    <circle cx="12" cy="17.2" r="1.15" fill="currentColor" stroke="none"/>
+    <path d="M4.4 13.6h1.5M18.1 13.6h1.5M6.9 8.5l1.1 1M17.1 8.5l-1.1 1"/>
+  {% elif category == "SUV" %}
+    <path d="M3 16.2v-3l2-4.6A2 2 0 0 1 6.8 7.3h10.4a2 2 0 0 1 1.8 1.3l2 4.6v3"/>
+    <path d="M3.4 13.2h17.2M6.8 13.2l1.6-3.7h7.2l1.6 3.7"/>
+    <path d="M3 16.2v1.6h2.4M21 16.2v1.6h-2.4"/>
+    <circle cx="6.8" cy="16.6" r="1.5"/><circle cx="17.2" cy="16.6" r="1.5"/>
+  {% elif category == "Luxury" %}
+    <path d="M12 3.2l7 5-7 12.6L5 8.2l7-5z"/>
+    <path d="M5 8.2h14M12 3.2L9 8.2l3 12.6 3-12.6-3-5z"/>
+  {% elif category == "Electric" %}
+    <path d="M13.2 2.6L4.8 13.4h5.9l-1 8 8.5-10.8h-5.8l.8-8z"/>
+  {% elif category == "Van" %}
+    <path d="M3.2 16.4V8.6a2 2 0 0 1 2-2h8.4l5.2 4.6v5.2"/>
+    <path d="M3.2 16.4h17.6M13.6 6.6v6.2h5.2"/>
+    <circle cx="7.4" cy="17.4" r="1.6"/><circle cx="17" cy="17.4" r="1.6"/>
+  {% elif category == "Pickup" %}
+    <path d="M3 16.4v-3.2h10.2V8.1h3.1l2.1 4.1h2.6v4.2"/>
+    <path d="M3 16.4h18M6.1 8.1h4.9v5.1"/>
+    <circle cx="7" cy="17.3" r="1.6"/><circle cx="17.1" cy="17.3" r="1.6"/>
+  {% elif category == "Hatchback" %}
+    <path d="M3.2 16.3v-3l2-.9L6.9 7.9a2 2 0 0 1 1.8-1.2h6.5a2 2 0 0 1 1.8 1.2l2.1 4.5 1.7.8v3.1"/>
+    <path d="M3.2 16.3h17.6M8.2 12.1h7.7"/>
+    <circle cx="7.2" cy="17.2" r="1.6"/><circle cx="16.8" cy="17.2" r="1.6"/>
+  {% else %}
+    <path d="M3.2 16v-3l2-1 2.2-4.3A2 2 0 0 1 8.9 6.5h6.2a2 2 0 0 1 1.7 1.1l2.4 4.4 1.6.9V16"/>
+    <path d="M3.2 16h17.6M7.6 12h8.8"/>
+    <circle cx="7.1" cy="17" r="1.6"/><circle cx="16.9" cy="17" r="1.6"/>
+  {% endif %}
+</svg>

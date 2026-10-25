@@ -1,0 +1,75 @@
+{% if items %}
+<div class="card overflow-hidden">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>Vehicle</th>
+          <th>Dates</th>
+          <th class="text-center">Days</th>
+          <th>Pickup</th>
+          <th class="text-end">Total</th>
+          <th>Status</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in items %}
+          <tr>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <span class="spec spec-compact">
+                  <i class="bi bi-car-front-fill"></i>
+                </span>
+                <div>
+                  <div class="text-accent fw-semibold text-decoration-none">{{ b.car.title }}</div>
+                  <div class="small text-dim">#{{ b.pk }} · {{ b.car.category }}</div>
+                </div>
+              </div>
+            </td>
+            <td class="small">
+              <i class="bi bi-calendar-plus me-1 text-accent"></i>{{ b.pickup_date|date:"D, M j Y" }}<br>
+              <i class="bi bi-calendar-minus me-1 text-accent"></i>{{ b.dropoff_date|date:"D, M j Y" }}
+            </td>
+            <td class="text-center">{{ b.num_days }}</td>
+            <td class="small">{{ b.pickup_location|default:b.car.location }}</td>
+            <td class="text-end text-accent fw-semibold">${{ b.total_price|floatformat:2 }}</td>
+            <td>
+              <span class="badge badge-{{ b.status }}">{{ b.get_status_display }}</span>
+            </td>
+            <td class="text-end">
+              <div class="d-inline-flex gap-1 justify-content-end">
+                <a href="{{ b.car.get_absolute_url }}" class="btn btn-ghost btn-sm" title="View car">
+                  <i class="bi bi-eye"></i>
+                </a>
+                {% if b.can_be_cancelled_by_user %}
+                  <form method="post" action="{% url 'bookings:cancel' b.pk %}" class="d-inline"
+                        onsubmit="return confirm('Cancel reservation #{{ b.pk }} for the {{ b.car.title }}?');">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <button type="submit" class="btn btn-ghost btn-sm" title="Cancel reservation">
+                      <i class="bi bi-x-lg"></i>
+                    </button>
+                  </form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+  <div class="empty-state">
+    <i class="bi bi-calendar-x"></i>
+    {% if tab == 'history' %}
+      <h2 class="h5 mt-3">No past reservations</h2>
+      <p class="text-dim mb-3">Your completed and cancelled rentals will appear here.</p>
+    {% else %}
+      <h2 class="h5 mt-3">No active reservations</h2>
+      <p class="text-dim mb-3">Pick your dates and book your first ride in a couple of clicks.</p>
+    {% endif %}
+    <a class="btn btn-accent" href="{% url 'cars:list' %}"><i class="bi bi-search me-1"></i>Browse the fleet</a>
+  </div>
+{% endif %}

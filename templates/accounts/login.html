@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Sign in — SkyRent{% endblock %}
+
+{% block content %}
+<div class="container auth-wrap">
+  <div class="card p-4 p-md-5 shadow">
+    <div class="text-center mb-4">
+      <div class="auth-icon"><i class="bi bi-box-arrow-in-right"></i></div>
+      <h1 class="h3 mb-1">Welcome back</h1>
+      <p class="text-dim small mb-0">Sign in to manage your reservations</p>
+    </div>
+
+    {% if form.non_field_errors %}
+      <div class="alert mb-3">
+        <i class="bi bi-exclamation-triangle me-1"></i>
+        Invalid username or password. Please try again.
+      </div>
+    {% endif %}
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% if request.GET.next %}<input type="hidden" name="next" value="{{ request.GET.next }}">{% endif %}
+
+      <div class="mb-3">
+        <label class="form-label" for="{{ form.username.id_for_label }}">
+          <i class="bi bi-person me-1"></i>{{ form.username.label }}
+        </label>
+        {{ form.username }}
+        {{ form.username.errors }}
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label" for="{{ form.password.id_for_label }}">
+          <i class="bi bi-lock me-1"></i>{{ form.password.label }}
+        </label>
+        {{ form.password }}
+        {{ form.password.errors }}
+      </div>
+
+      <button type="submit" class="btn btn-accent w-100 py-2 mb-3">
+        <i class="bi bi-box-arrow-in-right me-2"></i>Sign in
+      </button>
+
+      <p class="text-center small text-dim mb-0">
+        New here?
+        <a href="{% url 'accounts:register' %}" class="fw-semibold">Create an account</a>
+      </p>
+    </form>
+  </div>
+</div>
+{% endblock %}

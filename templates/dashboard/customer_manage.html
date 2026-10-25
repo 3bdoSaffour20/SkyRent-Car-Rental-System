@@ -1,0 +1,98 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}Customers — SkyRent{% endblock %}
+
+{% block dash_content %}
+<div class="dash-head mb-4 d-flex flex-wrap justify-content-between align-items-center gap-3">
+  <div>
+    <div class="crumb">Management · Customers</div>
+    <h1 class="mt-1"><i class="bi bi-people me-2"></i>Customer analytics</h1>
+    <p class="small text-dim mb-0">Who rents the most, what they spend and when they last booked.</p>
+  </div>
+  <a href="{% url 'dashboard:index' %}" class="btn btn-ghost btn-sm"><i class="bi bi-speedometer2 me-1"></i>Overview</a>
+</div>
+
+<!-- Totals -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-xl-3">
+    <div class="card stat-card p-3">
+      <div class="stat-value">{{ totals.customers }}</div>
+      <div class="stat-label">Registered users</div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="card stat-card p-3">
+      <div class="stat-value">{{ totals.active_customers }}</div>
+      <div class="stat-label">Have booked</div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="card stat-card p-3">
+      <div class="stat-value">{{ totals.bookings }}</div>
+      <div class="stat-label">Total bookings</div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="card stat-card p-3">
+      <div class="stat-value">${{ totals.revenue|floatformat:0 }}</div>
+      <div class="stat-label">Revenue</div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><i class="bi bi-table me-2"></i>All customers</div>
+  <div class="table-responsive">
+    <table class="table table-hover mb-0 align-middle">
+      <thead>
+        <tr>
+          <th>Customer</th>
+          <th>Contact</th>
+          <th class="text-center">Bookings</th>
+          <th class="text-center">Open</th>
+          <th class="text-end">Total spent</th>
+          <th>Last booking</th>
+          <th>Joined</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in customers %}
+          <tr>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <span class="spec spec-round">
+                  <i class="bi bi-person"></i>
+                </span>
+                <div>
+                  <span class="text-accent fw-semibold">{{ c.get_full_name|default:c.username }}</span>
+                  {% if c.is_staff %}<span class="badge badge-active ms-1">Staff</span>{% endif %}
+                  <div class="small text-dim">@{{ c.username }}</div>
+                </div>
+              </div>
+            </td>
+            <td class="small">
+              {{ c.email|default:"—" }}<br>
+              <span class="text-dim">{{ c.profile.phone|default:"no phone" }}</span>
+            </td>
+            <td class="text-center text-accent fw-semibold">{{ c.booking_count }}</td>
+            <td class="text-center">{{ c.open_bookings }}</td>
+            <td class="text-end text-accent fw-semibold">${{ c.total_spent|default:0|floatformat:2 }}</td>
+            <td class="small">{% if c.last_booking %}{{ c.last_booking|timesince }} ago{% else %}<span class="text-dim">Never</span>{% endif %}</td>
+            <td class="small text-dim">{{ c.date_joined|date:"M Y" }}</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="7">
+              <div class="empty-state my-2">
+                <i class="bi bi-people"></i>
+                <h2 class="h5 mt-3">No customers yet</h2>
+                <p class="text-dim mb-0">Registered users will show up here automatically.</p>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

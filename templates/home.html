@@ -1,0 +1,349 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}SkyRent — Premium Car Rental{% endblock %}
+
+{% block content %}
+<!-- ============================== HERO + SEARCH ============================== -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <span class="hero-badge"><i class="bi bi-stars" aria-hidden="true"></i>SkyRent fleet</span>
+        <h1>Rent the perfect car,<br><span class="accent-fill">hassle-free.</span></h1>
+        <p class="lead-custom">
+          Browse the vehicles in our fleet, compare daily rental prices, and send a
+          reservation request. Our team confirms availability and your pickup details.
+        </p>
+        <div class="hero-actions">
+          <a href="{% url 'cars:list' %}" class="btn btn-accent">
+            <i class="bi bi-car-front" aria-hidden="true"></i>Browse the Fleet
+          </a>
+          {% if user.is_authenticated %}
+            <a href="{% url 'bookings:my_bookings' %}" class="btn btn-outline-accent">
+              <i class="bi bi-calendar-check" aria-hidden="true"></i>My Bookings
+            </a>
+          {% else %}
+            <a href="{% url 'accounts:register' %}" class="btn btn-outline-accent">
+              <i class="bi bi-person-plus" aria-hidden="true"></i>Create Free Account
+            </a>
+          {% endif %}
+        </div>
+
+        <div class="hero-stats" aria-label="SkyRent at a glance">
+          <div class="hero-stat">
+            <strong>{{ stats.cars }}</strong>
+            <span>Total cars</span>
+          </div>
+          <div class="hero-stat">
+            <strong>{{ stats.available }}</strong>
+            <span>Available now</span>
+          </div>
+          <div class="hero-stat">
+            <strong>{{ stats.customers }}</strong>
+            <span>Customers</span>
+          </div>
+          <div class="hero-stat">
+            <strong>{{ stats.bookings }}</strong>
+            <span>Bookings</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="search-panel">
+        <div class="search-panel-head">
+          <span class="search-panel-icon"><i class="bi bi-search" aria-hidden="true"></i></span>
+          <div>
+            <h2>Quick reservation search</h2>
+            <p class="panel-sub">Search live availability in SkyRent's rental fleet.</p>
+          </div>
+        </div>
+
+        <form action="{% url 'cars:list' %}" method="get" id="quickSearchForm" novalidate>
+          <div class="search-grid">
+            <div class="span-2">
+              <label class="form-label" for="home_q">Make or model</label>
+              <input class="form-control" type="search" id="home_q" name="q"
+                     placeholder="e.g. Toyota, BMW, Tesla" autocomplete="off">
+            </div>
+
+            <div class="span-2">
+              <label class="form-label" for="home_category">Vehicle category</label>
+              <select class="form-select" id="home_category" name="category">
+                <option value="">All categories</option>
+                {% for value, label in categories_choices %}
+                  <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div>
+              <label class="form-label" for="home_pickup">Pickup date</label>
+              <input class="form-control" type="date" id="home_pickup" name="pickup_date"
+                     min="{{ today_iso }}">
+            </div>
+            <div>
+              <label class="form-label" for="home_dropoff">Return date</label>
+              <input class="form-control" type="date" id="home_dropoff" name="dropoff_date"
+                     min="{{ tomorrow_iso }}">
+            </div>
+
+            <div>
+              <label class="form-label" for="home_min">Minimum daily price</label>
+              <input class="form-control" type="number" min="0" step="1"
+                     id="home_min" name="min_price" placeholder="e.g. 40" inputmode="numeric">
+            </div>
+            <div>
+              <label class="form-label" for="home_max">Maximum daily price</label>
+              <input class="form-control" type="number" min="0" step="1"
+                     id="home_max" name="max_price" placeholder="e.g. 150" inputmode="numeric">
+            </div>
+
+            <div>
+              <label class="form-label" for="home_transmission">Transmission</label>
+              <select class="form-select" id="home_transmission" name="transmission">
+                <option value="">Any transmission</option>
+                {% for value, label in transmission_choices %}
+                  <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div>
+              <label class="form-label" for="home_fuel">Fuel type</label>
+              <select class="form-select" id="home_fuel" name="fuel_type">
+                <option value="">Any fuel type</option>
+                {% for value, label in fuel_choices %}
+                  <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <p class="form-note" id="quick-search-error" role="alert" aria-live="polite"></p>
+          <button class="btn btn-accent" type="submit">
+            <i class="bi bi-search" aria-hidden="true"></i>Search Cars
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== CATEGORIES ============================== -->
+<section class="container section-block" id="categories">
+  <div class="section-head">
+    <div>
+      <span class="section-kicker">Browse by type</span>
+      <h2 class="section-title">Popular categories</h2>
+      <p>Live counts and average daily rates from SkyRent's rental inventory.</p>
+    </div>
+    <a href="{% url 'cars:list' %}" class="btn btn-outline-accent btn-sm">
+      View all cars <i class="bi bi-arrow-right" aria-hidden="true"></i>
+    </a>
+  </div>
+
+  <div class="category-grid">
+    {% for cat in category_cards %}
+      {% if cat.has_vehicles %}
+        <a class="category-card" href="{% url 'cars:list' %}?category={{ cat.value|urlencode }}"
+           aria-label="{{ cat.label }}: {{ cat.available }} available, {{ cat.total }} in fleet">
+      {% else %}
+        <div class="category-card is-empty" aria-label="{{ cat.label }}: no vehicles in the fleet yet">
+      {% endif %}
+          <span class="category-icon">
+            {% include "cars/_category_icon.html" with category=cat.value %}
+          </span>
+          <span class="category-name">{{ cat.label }}</span>
+          <span class="category-meta">
+            {% if cat.available %}
+              {{ cat.available }} available
+            {% else %}
+              0 available
+            {% endif %}
+            &middot; {{ cat.total }} in fleet
+          </span>
+          <span class="category-price">
+            {% if cat.avg_rate %}
+              Avg <strong>${{ cat.avg_rate|floatformat:0 }}</strong>/day
+            {% else %}
+              <span class="muted">No rental rate yet</span>
+            {% endif %}
+          </span>
+      {% if cat.has_vehicles %}</a>{% else %}</div>{% endif %}
+    {% endfor %}
+  </div>
+</section>
+
+<!-- ============================== FEATURED ============================== -->
+<section class="container section-block">
+  <div class="section-head">
+    <div>
+      <span class="section-kicker">From our fleet</span>
+      <h2 class="section-title">Featured vehicles</h2>
+      <p>Prices shown are SkyRent daily rental rates — not manufacturer pricing.</p>
+    </div>
+    <a href="{% url 'cars:list' %}" class="btn btn-outline-accent btn-sm">
+      View all cars <i class="bi bi-arrow-right" aria-hidden="true"></i>
+    </a>
+  </div>
+
+  <div class="row g-4">
+    {% for car in featured %}
+      <div class="col-md-6 col-xl-4">
+        {% include "cars/_car_card.html" with car=car %}
+      </div>
+    {% empty %}
+      <div class="col-12">
+        <div class="empty-state">
+          <i class="bi bi-car-front" aria-hidden="true"></i>
+          <h2 class="h5">No vehicles are listed right now</h2>
+          <p>The fleet is being updated. Please check back shortly or contact the SkyRent office.</p>
+          {% if user.is_staff or user.is_superuser or user.profile.role == 'manager' %}
+            <a class="btn btn-accent" href="{% url 'dashboard:manage_car_create' %}">
+              <i class="bi bi-plus-lg" aria-hidden="true"></i>Add a car
+            </a>
+          {% else %}
+            <a class="btn btn-outline-accent" href="{% url 'cars:home' %}#contact">Contact SkyRent</a>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- ============================== HOW IT WORKS ============================== -->
+<section class="container section-block" id="about">
+  <div class="section-head">
+    <div>
+      <span class="section-kicker">How it works</span>
+      <h2 class="section-title">Three steps to the road</h2>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-md-4">
+      <div class="card h-100 p-4 lift">
+        <div class="stat-icon mb-3"><i class="bi bi-search" aria-hidden="true"></i></div>
+        <h3 class="h6 text-accent mb-2">1. Choose your car</h3>
+        <p class="small text-dim mb-0">
+          Filter the rental fleet by category, branch, price, seats, transmission and fuel type.
+        </p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card h-100 p-4 lift">
+        <div class="stat-icon mb-3"><i class="bi bi-calendar2-check" aria-hidden="true"></i></div>
+        <h3 class="h6 text-accent mb-2">2. Pick your dates</h3>
+        <p class="small text-dim mb-0">
+          Choose pickup and return dates. The total price is calculated from the daily rate before you submit.
+        </p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card h-100 p-4 lift">
+        <div class="stat-icon mb-3"><i class="bi bi-key" aria-hidden="true"></i></div>
+        <h3 class="h6 text-accent mb-2">3. Get confirmation</h3>
+        <p class="small text-dim mb-0">
+          Our team reviews the request, confirms the reservation and prepares the car at your branch.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== CTA ============================== -->
+<section class="container section-block pb-0">
+  <div class="card p-4 p-md-5 text-center">
+    <h2 class="h3 text-white mb-2">Ready to drive?</h2>
+    <p class="text-dim mx-auto mb-4 measure-52">
+      Create an account to keep every reservation, date and pickup detail in one place.
+    </p>
+    <div class="d-flex justify-content-center flex-wrap gap-2">
+      <a href="{% url 'cars:list' %}" class="btn btn-accent">Browse the Fleet</a>
+      {% if user.is_authenticated %}
+        <a href="{% url 'bookings:my_bookings' %}" class="btn btn-outline-accent">My Bookings</a>
+      {% else %}
+        <a href="{% url 'accounts:register' %}" class="btn btn-outline-accent">Create Free Account</a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function () {
+    const form = document.getElementById("quickSearchForm");
+    if (!form) return;
+
+    const pickup = document.getElementById("home_pickup");
+    const dropoff = document.getElementById("home_dropoff");
+    const min = document.getElementById("home_min");
+    const max = document.getElementById("home_max");
+    const errorBox = document.getElementById("quick-search-error");
+
+    function clearError() {
+      errorBox.textContent = "";
+      [pickup, dropoff, min, max].forEach(function (field) {
+        field.classList.remove("is-invalid");
+      });
+    }
+
+    function fail(message, field) {
+      errorBox.textContent = message;
+      if (field) {
+        field.classList.add("is-invalid");
+        field.focus();
+      }
+      return false;
+    }
+
+    // Keep the return date valid when the pickup date changes.
+    function localIso(date) {
+      const pad = (value) => String(value).padStart(2, "0");
+      return date.getFullYear() + "-" + pad(date.getMonth() + 1) + "-" + pad(date.getDate());
+    }
+
+    pickup.addEventListener("change", function () {
+      if (!pickup.value) return;
+      const next = new Date(pickup.value + "T00:00:00");
+      next.setDate(next.getDate() + 1);
+      const limit = localIso(next);
+      dropoff.min = limit;
+      if (dropoff.value && dropoff.value < limit) dropoff.value = "";
+    });
+
+    form.addEventListener("submit", function (event) {
+      clearError();
+      const minValue = min.value === "" ? null : Number(min.value);
+      const maxValue = max.value === "" ? null : Number(max.value);
+
+      if (minValue !== null && (Number.isNaN(minValue) || minValue < 0)) {
+        event.preventDefault();
+        return fail("Enter a valid minimum daily price (0 or more).", min);
+      }
+      if (maxValue !== null && (Number.isNaN(maxValue) || maxValue < 0)) {
+        event.preventDefault();
+        return fail("Enter a valid maximum daily price (0 or more).", max);
+      }
+      if (minValue !== null && maxValue !== null && minValue > maxValue) {
+        event.preventDefault();
+        return fail("Maximum daily price must be greater than or equal to the minimum.", max);
+      }
+      if (Boolean(pickup.value) !== Boolean(dropoff.value)) {
+        event.preventDefault();
+        return fail("Choose both a pickup date and a return date to check availability.",
+                    pickup.value ? dropoff : pickup);
+      }
+      if (pickup.value && pickup.value < localIso(new Date())) {
+        event.preventDefault();
+        return fail("Pickup date cannot be in the past.", pickup);
+      }
+      if (pickup.value && dropoff.value && dropoff.value <= pickup.value) {
+        event.preventDefault();
+        return fail("Return date must be after the pickup date.", dropoff);
+      }
+    });
+  })();
+</script>
+{% endblock %}

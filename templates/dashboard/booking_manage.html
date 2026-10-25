@@ -1,0 +1,98 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}Reservations — SkyRent{% endblock %}
+
+{% block dash_content %}
+<div class="dash-head mb-4 d-flex flex-wrap justify-content-between align-items-center gap-3">
+  <div>
+    <div class="crumb">Management · Reservations</div>
+    <h1 class="mt-1"><i class="bi bi-journal-check me-2"></i>Incoming reservations</h1>
+    <p class="small text-dim mb-0">Approve, start, complete or decline customer booking requests.</p>
+  </div>
+  <a href="{% url 'dashboard:index' %}" class="btn btn-ghost btn-sm"><i class="bi bi-speedometer2 me-1"></i>Overview</a>
+</div>
+
+<!-- Status tabs -->
+<ul class="nav nav-pills mb-4 gap-2 flex-wrap">
+  {% for tab in tabs %}
+    <li class="nav-item">
+      <a class="nav-link {% if active_tab == tab.value %}active{% endif %}"
+         href="{% url 'dashboard:manage_bookings' %}{% if tab.value %}?status={{ tab.value }}{% endif %}">
+        {{ tab.label }} <span class="badge {% if active_tab == tab.value %}badge-active{% else %}badge-pending{% endif %} ms-1">{{ tab.count }}</span>
+      </a>
+    </li>
+  {% endfor %}
+</ul>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0 align-middle">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Customer</th>
+          <th>Vehicle</th>
+          <th>Dates</th>
+          <th class="text-center">Days</th>
+          <th class="text-end">Total</th>
+          <th>Status</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in bookings %}
+          <tr>
+            <td class="text-accent fw-semibold">{{ b.pk }}</td>
+            <td>
+              <span class="text-accent">{{ b.user.get_full_name|default:b.user.username }}</span>
+              <div class="small text-dim">{{ b.user.email }}</div>
+              {% if b.notes %}<div class="small text-dim fst-italic" title="{{ b.notes }}">“{{ b.notes|truncatechars:48 }}”</div>{% endif %}
+            </td>
+            <td>
+              <a href="{{ b.car.get_absolute_url }}" class="text-accent">{{ b.car.title }}</a>
+              <div class="small text-dim">{{ b.car.category }} · {{ b.pickup_location|default:b.car.location }}</div>
+            </td>
+            <td class="small">
+              <i class="bi bi-calendar-plus me-1 text-accent"></i>{{ b.pickup_date|date:"M j, Y" }}<br>
+              <i class="bi bi-calendar-minus me-1 text-accent"></i>{{ b.dropoff_date|date:"M j, Y" }}
+            </td>
+            <td class="text-center">{{ b.num_days }}</td>
+            <td class="text-end text-accent fw-semibold">${{ b.total_price|floatformat:2 }}</td>
+            <td><span class="badge badge-{{ b.status }}">{{ b.get_status_display }}</span></td>
+            <td class="text-end">
+              {% if b.action_list %}
+                <div class="d-inline-flex gap-1 justify-content-end flex-wrap">
+                  {% for act in b.action_list %}
+                    <form method="post" action="{% url 'dashboard:manage_booking_action' b.pk act.status %}">
+                      {% csrf_token %}
+                      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                      <button type="submit" class="btn {{ act.cls }} btn-sm"
+                              onclick="return confirm('Set reservation #{{ b.pk }} to “{{ act.label }}”?');">
+                        <i class="bi bi-{{ act.icon }} me-1"></i>{{ act.label }}
+                      </button>
+                    </form>
+                  {% endfor %}
+                </div>
+              {% else %}
+                <span class="small text-dim">Closed</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="8">
+              <div class="empty-state my-2">
+                <i class="bi bi-inbox"></i>
+                <h2 class="h5 mt-3">No reservations here</h2>
+                <p class="text-dim mb-0">
+                  {% if active_tab %}Nothing with status “{{ active_tab_label }}” yet.{% else %}Requests from customers will appear here.{% endif %}
+                </p>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

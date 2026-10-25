@@ -1,0 +1,94 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}Fleet management — SkyRent{% endblock %}
+
+{% block dash_content %}
+<div class="dash-head mb-4 d-flex flex-wrap justify-content-between align-items-center gap-3">
+  <div>
+    <div class="crumb">Management · Fleet</div>
+    <h1 class="mt-1"><i class="bi bi-car-front me-2"></i>Fleet management</h1>
+    <p class="small text-dim mb-0">{{ total }} vehicle{{ total|pluralize }} in the system · {{ cars|length }} shown</p>
+  </div>
+  <div class="d-flex flex-wrap gap-2">
+    <form method="get" class="d-flex gap-2">
+      <input class="form-control" type="search" name="q" value="{{ query }}" placeholder="Search make, model ..." aria-label="Search cars">
+      <button class="btn btn-outline-accent" type="submit"><i class="bi bi-search"></i></button>
+    </form>
+    <a href="{% url 'dashboard:manage_car_create' %}" class="btn btn-accent">
+      <i class="bi bi-plus-lg me-1"></i>Add car
+    </a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0 align-middle">
+      <thead>
+        <tr>
+          <th>Vehicle</th>
+          <th>Category</th>
+          <th class="text-center">Seats</th>
+          <th>Transmission</th>
+          <th>Fuel</th>
+          <th class="text-end">Rate / day</th>
+          <th>Location</th>
+          <th>Status</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for car in cars %}
+          <tr>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <span class="spec spec-compact-40"><i class="bi bi-car-front-fill"></i></span>
+                <div>
+                  <a href="{{ car.get_absolute_url }}" class="text-accent fw-semibold">{{ car.title }}</a>
+                  <div class="small text-dim">{{ car.year }} · added {{ car.created_at|date:"M j, Y" }}</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="badge badge-approved">{{ car.category }}</span></td>
+            <td class="text-center">{{ car.seating_capacity }}</td>
+            <td class="small">{{ car.transmission }}</td>
+            <td class="small">{{ car.fuel_type }}</td>
+            <td class="text-end text-accent fw-semibold">${{ car.daily_rate|floatformat:2 }}</td>
+            <td class="small">{{ car.location }}</td>
+            <td>
+              {% if car.is_available %}
+                <span class="badge badge-active">Available</span>
+              {% else %}
+                <span class="badge badge-cancelled">Unavailable</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <div class="d-inline-flex gap-1 justify-content-end">
+                <a href="{{ car.get_absolute_url }}" class="btn btn-ghost btn-sm" title="Preview"><i class="bi bi-eye"></i></a>
+                <a href="{% url 'dashboard:manage_car_edit' car.pk %}" class="btn btn-outline-accent btn-sm" title="Edit">
+                  <i class="bi bi-pencil"></i>
+                </a>
+                <form method="post" action="{% url 'dashboard:manage_car_delete' car.pk %}" class="d-inline"
+                      onsubmit="return confirm('Delete {{ car }} from the fleet?');">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-ghost btn-sm" title="Delete"><i class="bi bi-trash3"></i></button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="9">
+              <div class="empty-state my-2">
+                <i class="bi bi-car-front"></i>
+                <h2 class="h5 mt-3">No cars found</h2>
+                <p class="text-dim mb-3">{% if query %}Nothing matches “{{ query }}”.{% else %}Start by adding a vehicle to the fleet.{% endif %}</p>
+                <a class="btn btn-accent" href="{% url 'dashboard:manage_car_create' %}"><i class="bi bi-plus-lg me-1"></i>Add a car</a>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

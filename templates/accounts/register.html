@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Create account — SkyRent{% endblock %}
+
+{% block content %}
+<div class="container auth-wrap auth-wrap-wide">
+  <div class="card p-4 p-md-5 shadow">
+    <div class="text-center mb-4">
+      <div class="auth-icon"><i class="bi bi-person-plus"></i></div>
+      <h1 class="h3 mb-1">Create your account</h1>
+      <p class="text-dim small mb-0">Register as a customer — it's free and takes under a minute.</p>
+    </div>
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+
+      <div class="row g-3">
+        <div class="col-sm-6">
+          <label class="form-label" for="{{ form.first_name.id_for_label }}">First name</label>
+          {{ form.first_name }}
+          {{ form.first_name.errors }}
+        </div>
+        <div class="col-sm-6">
+          <label class="form-label" for="{{ form.last_name.id_for_label }}">Last name</label>
+          {{ form.last_name }}
+          {{ form.last_name.errors }}
+        </div>
+
+        <div class="col-sm-6">
+          <label class="form-label" for="{{ form.username.id_for_label }}">Username</label>
+          {{ form.username }}
+          <div class="form-text">Letters, digits and @/./+/-/_ only.</div>
+          {{ form.username.errors }}
+        </div>
+        <div class="col-sm-6">
+          <label class="form-label" for="{{ form.email.id_for_label }}">Email</label>
+          {{ form.email }}
+          {{ form.email.errors }}
+        </div>
+
+        <div class="col-sm-6">
+          <label class="form-label" for="{{ form.password1.id_for_label }}">Password</label>
+          {{ form.password1 }}
+          {{ form.password1.errors }}
+          <div class="form-text">At least 8 characters, not entirely numeric.</div>
+        </div>
+        <div class="col-sm-6">
+          <label class="form-label" for="{{ form.password2.id_for_label }}">Confirm password</label>
+          {{ form.password2 }}
+          {{ form.password2.errors }}
+        </div>
+      </div>
+
+      {% if form.non_field_errors %}
+        <div class="alert mt-3">{{ form.non_field_errors }}</div>
+      {% endif %}
+
+      <button type="submit" class="btn btn-accent w-100 py-2 mt-4">
+        <i class="bi bi-person-check me-2"></i>Create account
+      </button>
+
+      <p class="text-center small text-dim mt-3 mb-0">
+        Already registered?
+        <a href="{% url 'accounts:login' %}" class="fw-semibold">Sign in</a>
+      </p>
+    </form>
+  </div>
+</div>
+{% endblock %}

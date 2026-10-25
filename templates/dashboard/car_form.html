@@ -1,0 +1,142 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}{{ title }} — SkyRent{% endblock %}
+
+{% block dash_content %}
+<div class="dash-head mb-4">
+  <div class="crumb">Management · Fleet</div>
+  <h1 class="mt-1">
+    {% if car %}<i class="bi bi-pencil-square me-2"></i>{% else %}<i class="bi bi-plus-lg me-2"></i>{% endif %}{{ title }}
+  </h1>
+  <p class="small text-dim mb-0">
+    {% if car %}Editing {{ car }}{% else %}Register a new vehicle so customers can find and book it.{% endif %}
+  </p>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="card p-4">
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        <div class="row g-3">
+          <div class="col-sm-6">
+            <label class="form-label" for="{{ form.make.id_for_label }}">Make</label>
+            {{ form.make }}{{ form.make.errors }}
+          </div>
+          <div class="col-sm-6">
+            <label class="form-label" for="{{ form.model.id_for_label }}">Model</label>
+            {{ form.model }}{{ form.model.errors }}
+          </div>
+
+          <div class="col-sm-4">
+            <label class="form-label" for="{{ form.year.id_for_label }}">Year</label>
+            {{ form.year }}{{ form.year.errors }}
+          </div>
+          <div class="col-sm-4">
+            <label class="form-label" for="{{ form.category.id_for_label }}">Category</label>
+            {{ form.category }}{{ form.category.errors }}
+          </div>
+          <div class="col-sm-4">
+            <label class="form-label" for="{{ form.daily_rate.id_for_label }}">Daily rate ($)</label>
+            {{ form.daily_rate }}{{ form.daily_rate.errors }}
+          </div>
+
+          <div class="col-sm-4">
+            <label class="form-label" for="{{ form.seating_capacity.id_for_label }}">Seats</label>
+            {{ form.seating_capacity }}{{ form.seating_capacity.errors }}
+          </div>
+          <div class="col-sm-4">
+            <label class="form-label" for="{{ form.transmission.id_for_label }}">Transmission</label>
+            {{ form.transmission }}{{ form.transmission.errors }}
+          </div>
+          <div class="col-sm-4">
+            <label class="form-label" for="{{ form.fuel_type.id_for_label }}">Fuel type</label>
+            {{ form.fuel_type }}{{ form.fuel_type.errors }}
+          </div>
+
+          <div class="col-sm-6">
+            <label class="form-label" for="{{ form.location.id_for_label }}">Pickup location</label>
+            {{ form.location }}{{ form.location.errors }}
+          </div>
+          <div class="col-sm-6">
+            <label class="form-label" for="{{ form.image_url.id_for_label }}">Photo URL</label>
+            {{ form.image_url }}{{ form.image_url.errors }}
+          </div>
+
+          <div class="col-12">
+            <label class="form-label" for="{{ form.description.id_for_label }}">Description</label>
+            {{ form.description }}{{ form.description.errors }}
+          </div>
+          <div class="col-12">
+            <label class="form-label" for="{{ form.features.id_for_label }}">Features <span class="text-dim">(comma separated)</span></label>
+            {{ form.features }}{{ form.features.errors }}
+          </div>
+
+          <div class="col-12">
+            <div class="form-check form-switch">
+              {{ form.is_available }}
+              <label class="form-check-label" for="{{ form.is_available.id_for_label }}">
+                {{ form.is_available.label }}
+              </label>
+            </div>
+          </div>
+        </div>
+
+        {% if form.non_field_errors %}
+          <div class="alert mt-3">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="d-flex flex-wrap gap-2 mt-4">
+          <button type="submit" class="btn btn-accent px-4">
+            <i class="bi bi-check2 me-1"></i>{{ submit_label }}
+          </button>
+          <a href="{% url 'dashboard:manage_cars' %}" class="btn btn-ghost">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Live preview -->
+  <div class="col-lg-4">
+    <div class="card p-4 form-summary-card">
+      <h2 class="h6 text-accent mb-3"><i class="bi bi-eye me-2"></i>Preview</h2>
+      <div class="spec-row mb-3">
+        <span class="spec"><i class="bi bi-people"></i><span id="pvSeats">5</span> seats</span>
+        <span class="spec"><i class="bi bi-gear"></i><span id="pvTrans">Automatic</span></span>
+        <span class="spec"><i class="bi bi-fuel"></i><span id="pvFuel">Petrol</span></span>
+        <span class="spec"><i class="bi bi-calendar3"></i><span id="pvYear">2024</span></span>
+      </div>
+      <div class="d-flex justify-content-between align-items-center glass p-3">
+        <span class="small text-body-custom">Rate / day</span>
+        <span class="fs-5 fw-bold text-accent" id="pvRate">$0.00</span>
+      </div>
+      <div class="divider my-3"></div>
+      <p class="small text-dim mb-0">
+        The vehicle appears instantly in the <a href="{% url 'cars:list' %}">public catalog</a>
+        once it's marked as available.
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Tiny live preview of the form values
+  (function () {
+    const bind = (id, out, fmt) => {
+      const el = document.getElementById(id);
+      const target = document.getElementById(out);
+      if (!el || !target) return;
+      const sync = () => { target.textContent = fmt ? fmt(el.value) : (el.value || '—'); };
+      el.addEventListener('input', sync); el.addEventListener('change', sync); sync();
+    };
+    bind('id_seating_capacity', 'pvSeats');
+    bind('id_transmission', 'pvTrans');
+    bind('id_fuel_type', 'pvFuel');
+    bind('id_year', 'pvYear');
+    bind('id_daily_rate', 'pvRate', v => '$' + (parseFloat(v || 0) || 0).toFixed(2));
+  })();
+</script>
+{% endblock %}

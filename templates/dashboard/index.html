@@ -1,0 +1,384 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}Dashboard — SkyRent{% endblock %}
+
+{% block dash_content %}
+<!-- Header -->
+<div class="dash-head mb-4 d-flex flex-wrap justify-content-between align-items-center gap-3">
+  <div>
+    <div class="crumb">Management dashboard</div>
+    <h1 class="mt-1"><i class="bi bi-speedometer2 me-2"></i>Operations overview</h1>
+    <p class="small text-dim mb-0">Welcome back, {{ user.get_full_name|default:user.username }} — here's how the business is doing today.</p>
+  </div>
+  <div class="d-flex flex-wrap gap-2">
+    <a href="{% url 'dashboard:manage_car_create' %}" class="btn btn-accent btn-sm">
+      <i class="bi bi-plus-lg me-1"></i>Add car
+    </a>
+    <a href="{% url 'dashboard:manage_bookings' %}?status=pending" class="btn btn-outline-accent btn-sm">
+      <i class="bi bi-inbox me-1"></i>Pending ({{ kpis.pending }})
+    </a>
+  </div>
+</div>
+
+<!-- KPIs -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-xl-3">
+    <div class="card stat-card p-3 h-100">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="stat-value">{{ kpis.cars }}</div>
+          <div class="stat-label">Fleet size</div>
+        </div>
+        <div class="stat-icon"><i class="bi bi-truck"></i></div>
+      </div>
+      <div class="small text-dim mt-2"><i class="bi bi-check-circle me-1 text-accent"></i>{{ kpis.cars_available }} available now</div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="card stat-card p-3 h-100">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="stat-value">{{ kpis.bookings }}</div>
+          <div class="stat-label">Total bookings</div>
+        </div>
+        <div class="stat-icon"><i class="bi bi-journal-check"></i></div>
+      </div>
+      <div class="small text-dim mt-2"><i class="bi bi-hourglass-split me-1 text-accent"></i>{{ kpis.pending }} awaiting approval</div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="card stat-card p-3 h-100">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="stat-value">{{ kpis.customers }}</div>
+          <div class="stat-label">Customers</div>
+        </div>
+        <div class="stat-icon"><i class="bi bi-people"></i></div>
+      </div>
+      <div class="small text-dim mt-2"><i class="bi bi-lightning me-1 text-accent"></i>{{ kpis.open }} open reservations</div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="card stat-card p-3 h-100">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="stat-value">${{ kpis.revenue|floatformat:0 }}</div>
+          <div class="stat-label">Revenue</div>
+        </div>
+        <div class="stat-icon"><i class="bi bi-graph-up-arrow"></i></div>
+      </div>
+      <div class="small text-dim mt-2"><i class="bi bi-hourglass-split me-1 text-accent"></i>${{ kpis.pending_value|floatformat:0 }} in pending value</div>
+    </div>
+  </div>
+</div>
+
+<div class="card p-3 p-md-4 mb-4" id="carapi-sync">
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+    <div>
+      <h2 class="h6 text-accent mb-1"><i class="bi bi-cloud-arrow-down me-2" aria-hidden="true"></i>CarAPI vehicle catalog</h2>
+      <div class="small text-dim">
+        Server-side catalog synchronization. Rental prices, photos, branches, availability and bookings are never modified.
+      </div>
+    </div>
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+      {% if carapi_status.state == 'authenticated' %}
+        <span class="badge badge-active"><i class="bi bi-plug" aria-hidden="true"></i>API connected</span>
+      {% elif carapi_status.state == 'configured' %}
+        <span class="badge badge-approved"><i class="bi bi-key" aria-hidden="true"></i>Credentials configured</span>
+      {% else %}
+        <span class="badge badge-cancelled"><i class="bi bi-slash-circle" aria-hidden="true"></i>Not configured</span>
+      {% endif %}
+      <span class="badge badge-pending">{{ catalog_model_count }} models &middot; {{ catalog_trim_count }} trims</span>
+    </div>
+  </div>
+
+  <div class="row g-4 mt-2">
+    <div class="col-lg-5">
+      <form method="post" action="{% url 'dashboard:sync_catalog' %}" class="p-3 glass">
+        {% csrf_token %}
+        <div class="row g-2">
+          <div class="col-6">
+            <label class="form-label small mb-1" for="catalog-year">Model year</label>
+            <input class="form-control form-control-sm" id="catalog-year" name="year" type="number"
+                   min="1900" max="2100" value="{{ sync_year_default }}" required>
+          </div>
+          <div class="col-6">
+            <label class="form-label small mb-1" for="catalog-make">Make (optional)</label>
+            <input class="form-control form-control-sm" id="catalog-make" name="make"
+                   type="text" maxlength="100" placeholder="e.g. Toyota">
+          </div>
+        </div>
+        <div class="form-check mt-3">
+          <input class="form-check-input" type="checkbox" id="catalog-specs" name="include_specs" checked>
+          <label class="form-check-label" for="catalog-specs">
+            Include trims, body and engine specifications
+          </label>
+        </div>
+        <div class="d-flex flex-wrap gap-2 mt-3">
+          <button class="btn btn-accent btn-sm" type="submit" {% if not carapi_configured %}disabled{% endif %}>
+            <i class="bi bi-arrow-repeat" aria-hidden="true"></i>Synchronize catalog
+          </button>
+          <button class="btn btn-outline-accent btn-sm" type="submit"
+                  formaction="{% url 'dashboard:test_catalog' %}" {% if not carapi_configured %}disabled{% endif %}>
+            <i class="bi bi-plug" aria-hidden="true"></i>Test connection
+          </button>
+        </div>
+        <p class="form-text mt-2 mb-0">
+          Sync is manual. Choose a year available on your CarAPI subscription. A make filter keeps large imports bounded.
+        </p>
+        {% if not carapi_configured %}
+          <p class="small text-dim mt-2 mb-0">
+            <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
+            Set <code>CARAPI_API_TOKEN</code> and <code>CARAPI_API_SECRET</code> in the
+            server environment, then restart Django to enable these buttons.
+          </p>
+        {% endif %}
+      </form>
+
+      <div class="small text-dim mt-3">
+        <div>Subscription: <span class="text-accent">{{ carapi_status.subscription|default:"not verified yet" }}</span></div>
+        <div>JWT expires: <span class="text-accent">{% if carapi_status.expires_at %}{{ carapi_status.expires_at|date:"M j, Y H:i" }} UTC{% else %}not connected yet{% endif %}</span></div>
+      </div>
+    </div>
+
+    <div class="col-lg-7">
+      {% if last_sync %}
+        <div class="p-3 glass">
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div class="fw-semibold text-accent">Last completed sync</div>
+            <span class="badge {% if last_sync.status == 'success' %}badge-active{% else %}badge-pending{% endif %}">
+              {{ last_sync.get_status_display }}
+            </span>
+          </div>
+          <div class="row g-2 mt-1 text-center">
+            <div class="col-4">
+              <div class="stat-value stat-value-sm">{{ last_sync.models_imported }}</div>
+              <div class="stat-label">New models</div>
+            </div>
+            <div class="col-4">
+              <div class="stat-value stat-value-sm">{{ last_sync.models_updated }}</div>
+              <div class="stat-label">Updated</div>
+            </div>
+            <div class="col-4">
+              <div class="stat-value stat-value-sm">{{ last_sync.trims_imported }}</div>
+              <div class="stat-label">New trims</div>
+            </div>
+            <div class="col-4">
+              <div class="stat-value stat-value-sm">{{ last_sync.specs_updated }}</div>
+              <div class="stat-label">Specs applied</div>
+            </div>
+            <div class="col-4">
+              <div class="stat-value stat-value-sm">{{ last_sync.skipped }}</div>
+              <div class="stat-label">Skipped</div>
+            </div>
+            <div class="col-4">
+              <div class="stat-value stat-value-sm">{{ last_sync.error_count }}</div>
+              <div class="stat-label">Errors</div>
+            </div>
+          </div>
+          <div class="small text-dim mt-2">
+            {{ last_sync.year }}{% if last_sync.make %} / {{ last_sync.make }}{% endif %} &middot;
+            finished {{ last_sync.finished_at|date:"M j, Y H:i" }} UTC
+            {% if last_sync.duration_seconds %} &middot; {{ last_sync.duration_seconds }}s{% endif %}
+          </div>
+          {% if last_sync.message %}
+            <p class="small text-dim mb-0 mt-2">{{ last_sync.message|truncatechars:280 }}</p>
+          {% endif %}
+        </div>
+      {% else %}
+        <div class="empty-state py-4">
+          <i class="bi bi-database" aria-hidden="true"></i>
+          <p class="text-dim mt-2 mb-0">No catalog sync has completed yet. The rental fleet is unaffected.</p>
+        </div>
+      {% endif %}
+
+      {% if sync_logs %}
+        <div class="mt-3">
+          <div class="filter-group-title mb-2">Recent sync attempts</div>
+          {% for log in sync_logs %}
+            <div class="d-flex justify-content-between align-items-start gap-2 py-2 border-bottom log-row">
+              <div>
+                <div class="small text-accent fw-semibold">
+                  {{ log.year }}{% if log.make %} / {{ log.make }}{% endif %}
+                  <span class="text-dim fw-normal">&middot; {{ log.started_at|date:"M j, H:i" }} UTC</span>
+                </div>
+                <div class="small text-dim">{{ log.message|default:"In progress…"|truncatechars:120 }}</div>
+              </div>
+              <span class="badge {% if log.status == 'success' %}badge-active{% elif log.status == 'failed' %}badge-cancelled{% else %}badge-pending{% endif %}">
+                {{ log.get_status_display }}
+              </span>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Charts -->
+<div class="row g-3 mb-4">
+  <div class="col-lg-7">
+    <div class="card p-4 h-100">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="h6 mb-0 text-accent"><i class="bi bi-bar-chart me-2"></i>Bookings per month (last 6 months)</h2>
+      </div>
+      <div class="bar-chart">
+        {% for m in monthly_chart %}
+          <div class="bar" title="{{ m.label }}: {{ m.count }} booking{{ m.count|pluralize }}">
+            <span class="cap">{{ m.count }}</span>
+            <div class="fill" style="height: {{ m.pct|default:2 }}%"></div>
+            <span class="cap">{{ m.label }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card p-4 h-100">
+      <h2 class="h6 text-accent mb-3"><i class="bi bi-pie-chart me-2"></i>Reservation status</h2>
+      <div class="d-flex flex-column gap-3">
+        {% for row in status_rows %}
+          <div>
+            <div class="d-flex justify-content-between small mb-1">
+              <span class="text-body-custom">{{ row.label }}</span>
+              <span class="text-accent fw-semibold">{{ row.value }}</span>
+            </div>
+            <div class="progress" role="progressbar" aria-valuenow="{{ row.value }}" aria-valuemin="0"
+                 aria-valuemax="{{ kpis.bookings|default:1 }}">
+              <div class="progress-bar" style="width: {{ row.pct }}%"></div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+      <div class="divider my-3"></div>
+      <div class="small text-dim">Fleet mix is shown on the <a href="#top-cars">top cars</a> and category tables below.</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <!-- Pending approvals -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-inbox me-2"></i>Awaiting approval</span>
+        <a href="{% url 'dashboard:manage_bookings' %}?status=pending" class="small">View all</a>
+      </div>
+      <div class="p-3">
+        {% for b in pending_list %}
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 pb-3 mb-3 {% if not forloop.last %}border-bottom{% endif %}">
+            <div>
+              <div class="text-accent fw-semibold">#{{ b.pk }} · {{ b.car.title }}</div>
+              <div class="small text-dim">
+                {{ b.user.username }} · {{ b.pickup_date|date:"M j" }} → {{ b.dropoff_date|date:"M j" }} ·
+                ${{ b.total_price|floatformat:0 }}
+              </div>
+            </div>
+            <div class="d-flex gap-1">
+              <form method="post" action="{% url 'dashboard:manage_booking_action' b.pk 'approved' %}">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <button class="btn btn-accent btn-sm" title="Approve"><i class="bi bi-check-lg"></i></button>
+              </form>
+              <form method="post" action="{% url 'dashboard:manage_booking_action' b.pk 'rejected' %}">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <button class="btn btn-ghost btn-sm" title="Reject"><i class="bi bi-x-lg"></i></button>
+              </form>
+            </div>
+          </div>
+        {% empty %}
+          <div class="empty-state py-4">
+            <i class="bi bi-check2-circle"></i>
+            <p class="text-dim mt-2 mb-0">Nothing waiting — inbox zero 🎉</p>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Top cars -->
+  <div class="col-lg-6" id="top-cars">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-trophy me-2"></i>Top performing vehicles</div>
+      <div class="p-3 d-flex flex-column gap-3">
+        {% for car in top_cars %}
+          <div>
+            <div class="d-flex justify-content-between small mb-1">
+              <span class="text-accent">{{ car.title }} <span class="text-dim">({{ car.year }})</span></span>
+              <span class="text-body-custom">{{ car.booking_count }} booking{{ car.booking_count|pluralize }} ·
+                <span class="text-accent">${{ car.revenue|default:0|floatformat:0 }}</span>
+              </span>
+            </div>
+            <div class="progress"><div class="progress-bar" style="width: {{ car.pct }}%"></div></div>
+          </div>
+        {% empty %}
+          <div class="empty-state py-4">
+            <i class="bi bi-car-front"></i>
+            <p class="text-dim mt-2 mb-0">No cars yet — <a href="{% url 'dashboard:manage_car_create' %}">add your first vehicle</a>.</p>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Recent bookings -->
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-clock-history me-2"></i>Recent reservations</span>
+    <a href="{% url 'dashboard:manage_bookings' %}" class="small">Manage all →</a>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Customer</th>
+          <th>Vehicle</th>
+          <th>Dates</th>
+          <th class="text-end">Total</th>
+          <th>Status</th>
+          <th>Created</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in recent_bookings %}
+          <tr>
+            <td class="text-accent">#{{ b.pk }}</td>
+            <td>
+              <span class="text-accent">{{ b.user.get_full_name|default:b.user.username }}</span>
+              <div class="small text-dim">{{ b.user.email }}</div>
+            </td>
+            <td>{{ b.car.title }}</td>
+            <td class="small">{{ b.pickup_date|date:"M j" }} → {{ b.dropoff_date|date:"M j, Y" }}</td>
+            <td class="text-end text-accent">${{ b.total_price|floatformat:2 }}</td>
+            <td><span class="badge badge-{{ b.status }}">{{ b.get_status_display }}</span></td>
+            <td class="small text-dim">{{ b.created_at|timesince }} ago</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="7" class="text-center text-dim py-4">No reservations yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Category mix -->
+{% if category_rows %}
+  <div class="card mt-4">
+    <div class="card-header"><i class="bi bi-tags me-2"></i>Fleet mix by category</div>
+    <div class="p-3 d-flex flex-column gap-3">
+      {% for row in category_rows %}
+        <div>
+          <div class="d-flex justify-content-between small mb-1">
+            <span class="text-accent">{{ row.category }}</span>
+            <span class="text-body-custom">{{ row.count }} car{{ row.count|pluralize }}</span>
+          </div>
+          <div class="progress"><div class="progress-bar" style="width: {{ row.pct }}%"></div></div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+{% endif %}
+{% endblock %}

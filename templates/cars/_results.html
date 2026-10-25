@@ -1,0 +1,77 @@
+{# Result grid used both for the full page and for AJAX filter updates. #}
+<div id="fleet-results" aria-live="polite" aria-busy="false">
+  <div class="results-toolbar">
+    <span class="results-count">
+      <strong>{{ result_count }}</strong> vehicle{{ result_count|pluralize }}
+      {% if selected_dates %}available for your dates{% else %}in the fleet{% endif %}
+    </span>
+    {% if selected_dates %}
+      <span class="active-dates">
+        <i class="bi bi-calendar-range" aria-hidden="true"></i>
+        {{ selected_pickup|date:"M j" }} – {{ selected_dropoff|date:"M j, Y" }}
+      </span>
+    {% endif %}
+  </div>
+
+  {% if form.errors %}
+    <div class="results-error mb-3" role="alert">
+      <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+      <div>
+        <strong>Please check your filters</strong>
+        <p>
+          {% for field in form %}
+            {% for error in field.errors %}{{ error }}{% if not forloop.last %} {% endif %}{% endfor %}
+          {% endfor %}
+          {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+        </p>
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="results-grid">
+    <div class="row g-4">
+      {% for car in cars %}
+        <div class="col-md-6 col-xxl-4">
+          {% include "cars/_car_card.html" with car=car %}
+        </div>
+      {% empty %}
+        {% if not form.errors %}
+          <div class="col-12">
+            <div class="empty-state">
+              <i class="bi bi-search" aria-hidden="true"></i>
+              <h2 class="h5">No vehicles match these filters</h2>
+              <p>Try widening the daily price range, choosing another branch, or clearing the rental dates.</p>
+              <a class="btn btn-outline-accent" href="{% url 'cars:list' %}">
+                <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>Clear all filters
+              </a>
+            </div>
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+
+  {% if page_obj.paginator.num_pages > 1 %}
+    <nav class="mt-4" aria-label="Fleet pages">
+      <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?{% if query_params %}{{ query_params }}&amp;{% endif %}page={{ page_obj.previous_page_number }}">
+              <i class="bi bi-chevron-left" aria-hidden="true"></i> Previous
+            </a>
+          </li>
+        {% endif %}
+        <li class="page-item disabled">
+          <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        </li>
+        {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?{% if query_params %}{{ query_params }}&amp;{% endif %}page={{ page_obj.next_page_number }}">
+              Next <i class="bi bi-chevron-right" aria-hidden="true"></i>
+            </a>
+          </li>
+        {% endif %}
+      </ul>
+    </nav>
+  {% endif %}
+</div>

@@ -1,0 +1,48 @@
+{# Reusable car card. Expects `car`; availability fields are added by the views. #}
+<article class="car-card">
+  <div class="car-media">
+    {% if car.image_url %}
+      <img src="{{ car.image_url }}" alt="{{ car.year }} {{ car.make }} {{ car.model }}"
+           loading="lazy" decoding="async"
+           onerror="this.classList.add('d-none'); this.nextElementSibling.classList.remove('d-none');">
+      <div class="placeholder-icon d-none"><i class="bi bi-car-front" aria-hidden="true"></i></div>
+    {% else %}
+      <div class="placeholder-icon"><i class="bi bi-car-front" aria-hidden="true"></i></div>
+    {% endif %}
+
+    <div class="car-chips">
+      <span class="chip chip-category">{{ car.category }}</span>
+      <span class="chip status-{{ car.status_tone|default:'ok' }}">{{ car.status_label|default:"Available" }}</span>
+    </div>
+    <span class="rate-chip">${{ car.daily_rate|floatformat:0 }}<small>/day</small></span>
+  </div>
+
+  <div class="car-body">
+    <h3 class="car-title">{{ car.make }} {{ car.model }}</h3>
+    <p class="car-sub">{{ car.year }} &middot; {{ car.category }}</p>
+    <p class="car-location">
+      <i class="bi bi-geo-alt" aria-hidden="true"></i>{{ car.location|default:"Main Branch" }}
+    </p>
+
+    <div class="spec-row">
+      <span class="spec"><i class="bi bi-people" aria-hidden="true"></i>{{ car.seating_capacity }} seats</span>
+      <span class="spec"><i class="bi bi-gear" aria-hidden="true"></i>{{ car.transmission }}</span>
+      <span class="spec"><i class="bi bi-fuel-pump" aria-hidden="true"></i>{{ car.fuel_type }}</span>
+    </div>
+
+    <div class="car-actions">
+      <a href="{{ car.get_absolute_url }}" class="btn btn-outline-accent">
+        <i class="bi bi-eye" aria-hidden="true"></i>View Details
+      </a>
+      {% if car.is_available %}
+        <a href="{{ car.get_absolute_url }}#reserve" class="btn btn-accent">
+          <i class="bi bi-calendar-plus" aria-hidden="true"></i>Book Now
+        </a>
+      {% else %}
+        <span class="btn btn-ghost disabled" aria-disabled="true">
+          <i class="bi bi-slash-circle" aria-hidden="true"></i>Unavailable
+        </span>
+      {% endif %}
+    </div>
+  </div>
+</article>

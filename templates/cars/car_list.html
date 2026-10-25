@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+
+{% block title %}Browse Cars — SkyRent{% endblock %}
+
+{% block content %}
+<div class="container page-head">
+  <nav aria-label="Breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'cars:home' %}">Home</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Browse Cars</li>
+    </ol>
+  </nav>
+  <h1 class="h2 mb-1">Browse our fleet</h1>
+  <p class="text-dim mb-0">Search live SkyRent inventory by price, dates, category and vehicle specifications.</p>
+</div>
+
+<div class="container pb-5">
+  <div class="fleet-layout">
+
+    <!-- ============================ FILTERS ============================ -->
+    <div>
+      <button class="btn btn-outline-accent filter-toggle" type="button"
+              data-bs-toggle="collapse" data-bs-target="#filterPanel"
+              aria-expanded="false" aria-controls="filterPanel">
+        <i class="bi bi-funnel" aria-hidden="true"></i>Filters
+        {% if active_filter_count %}
+          <span class="badge badge-active ms-1">{{ active_filter_count }}</span>
+        {% endif %}
+      </button>
+
+      <div class="collapse d-lg-block" id="filterPanel">
+        <form method="get" action="{% url 'cars:list' %}" id="filterForm" class="filter-card">
+          <div class="filter-head">
+            <h2><i class="bi bi-funnel me-2" aria-hidden="true"></i>Filter the fleet</h2>
+            <a href="{% url 'cars:list' %}" class="reset-link">Reset all</a>
+          </div>
+
+          {% if form.non_field_errors %}
+            <div class="results-error mb-3" role="alert">
+              <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+              <div>
+                <strong>Please check the filters</strong>
+                <p>{{ form.non_field_errors|join:" " }}</p>
+              </div>
+            </div>
+          {% endif %}
+
+          <div class="filter-group">
+            <h3 class="filter-group-title">Search</h3>
+            <label class="form-label" for="{{ form.q.id_for_label }}">Make or model</label>
+            {{ form.q }}
+            {{ form.q.errors }}
+            <div class="row mt-1">
+              <div class="col-6">
+                <label class="form-label" for="{{ form.make.id_for_label }}">Make</label>
+                {{ form.make }}
+                {{ form.make.errors }}
+              </div>
+              <div class="col-6">
+                <label class="form-label" for="{{ form.model.id_for_label }}">Model</label>
+                {{ form.model }}
+                {{ form.model.errors }}
+              </div>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <h3 class="filter-group-title">Vehicle</h3>
+            <label class="form-label" for="{{ form.category.id_for_label }}">Category</label>
+            {{ form.category }}
+            {{ form.category.errors }}
+
+            <div class="row mt-1">
+              <div class="col-6">
+                <label class="form-label" for="{{ form.year.id_for_label }}">Model year</label>
+                {{ form.year }}
+                {{ form.year.errors }}
+              </div>
+              <div class="col-6">
+                <label class="form-label" for="{{ form.seats.id_for_label }}">Seats</label>
+                {{ form.seats }}
+                {{ form.seats.errors }}
+              </div>
+            </div>
+
+            <label class="form-label mt-1" for="{{ form.branch.id_for_label }}">Pickup branch</label>
+            {{ form.branch }}
+            {{ form.branch.errors }}
+          </div>
+
+          <div class="filter-group">
+            <h3 class="filter-group-title">Daily price</h3>
+            <div class="row">
+              <div class="col-6">
+                <label class="form-label" for="{{ form.min_price.id_for_label }}">Minimum</label>
+                {{ form.min_price }}
+                {{ form.min_price.errors }}
+              </div>
+              <div class="col-6">
+                <label class="form-label" for="{{ form.max_price.id_for_label }}">Maximum</label>
+                {{ form.max_price }}
+                {{ form.max_price.errors }}
+              </div>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <h3 class="filter-group-title">Rental dates</h3>
+            <label class="form-label" for="{{ form.pickup_date.id_for_label }}">Pickup date</label>
+            {{ form.pickup_date }}
+            {{ form.pickup_date.errors }}
+            <label class="form-label mt-1" for="{{ form.dropoff_date.id_for_label }}">Return date</label>
+            {{ form.dropoff_date }}
+            {{ form.dropoff_date.errors }}
+            <div class="form-text">Both dates are required to check availability.</div>
+          </div>
+
+          <div class="filter-group">
+            <h3 class="filter-group-title">Specifications</h3>
+            <label class="form-label" for="{{ form.transmission.id_for_label }}">Transmission</label>
+            {{ form.transmission }}
+            {{ form.transmission.errors }}
+            <label class="form-label mt-1" for="{{ form.fuel_type.id_for_label }}">Fuel type</label>
+            {{ form.fuel_type }}
+            {{ form.fuel_type.errors }}
+            <label class="form-label mt-1" for="{{ form.sort.id_for_label }}">Sort by</label>
+            {{ form.sort }}
+            {{ form.sort.errors }}
+          </div>
+
+          <div class="form-check mb-3">
+            {{ form.available }}
+            <label class="form-check-label" for="{{ form.available.id_for_label }}">Available now only</label>
+          </div>
+
+          <button class="btn btn-accent w-100" type="submit">
+            <i class="bi bi-search" aria-hidden="true"></i>Search Cars
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ============================ RESULTS ============================ -->
+    <div>
+      {% include "cars/_results.html" %}
+    </div>
+  </div>
+</div>
+
+<!-- Skeleton markup cloned by the progressive enhancement script. -->
+<template id="skeletonTemplate">
+  <div class="results-toolbar">
+    <span class="skeleton-block skeleton-line skeleton-toolbar-line"></span>
+  </div>
+  <div class="row g-4">
+    {% for _ in "123456" %}
+      <div class="col-md-6 col-xxl-4">{% include "cars/_skeleton_card.html" %}</div>
+    {% endfor %}
+  </div>
+</template>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function () {
+    const form = document.getElementById("filterForm");
+    const panel = document.getElementById("filterPanel");
+    if (!form) return;
+
+    const listUrl = form.getAttribute("action") || window.location.pathname;
+    let activeRequest = null;
+
+    function skeletonMarkup() {
+      const template = document.getElementById("skeletonTemplate");
+      return template ? template.content.cloneNode(true) : document.createTextNode("");
+    }
+
+    function showSkeletons(results) {
+      results.innerHTML = "";
+      results.appendChild(skeletonMarkup());
+      results.setAttribute("aria-busy", "true");
+    }
+
+    function showError(results, retryUrl) {
+      results.innerHTML =
+        '<div class="results-error" role="alert">' +
+          '<i class="bi bi-wifi-off" aria-hidden="true"></i>' +
+          "<div><strong>We couldn't load the fleet</strong>" +
+          "<p>The server did not respond. Check your connection and try again.</p>" +
+          '<button type="button" class="btn btn-outline-accent btn-sm mt-2" data-retry>Retry</button></div>' +
+        "</div>";
+      results.setAttribute("aria-busy", "false");
+      const retry = results.querySelector("[data-retry]");
+      if (retry) {
+        retry.addEventListener("click", function () { load(retryUrl); });
+      }
+    }
+
+    async function load(url) {
+      const results = document.getElementById("fleet-results");
+      if (!results) return;
+
+      if (activeRequest) activeRequest.abort();
+      activeRequest = new AbortController();
+
+      const fetchUrl = new URL(url, window.location.origin);
+      fetchUrl.searchParams.set("partial", "1");
+      showSkeletons(results);
+
+      try {
+        const response = await fetch(fetchUrl.toString(), {
+          headers: { "X-Requested-With": "fetch" },
+          signal: activeRequest.signal,
+        });
+        if (!response.ok) throw new Error("HTTP " + response.status);
+        const html = await response.text();
+        const parsed = new DOMParser().parseFromString(html, "text/html");
+        const fresh = parsed.getElementById("fleet-results");
+        if (!fresh) throw new Error("Missing results");
+        const current = document.getElementById("fleet-results");
+        current.replaceWith(document.importNode(fresh, true));
+
+        const cleanUrl = new URL(url, window.location.origin);
+        window.history.replaceState({}, "", cleanUrl.pathname + cleanUrl.search);
+
+        // Keep the mobile filter panel open state predictable.
+        if (window.bootstrap && window.innerWidth < 992 && panel && panel.classList.contains("show")) {
+          window.bootstrap.Collapse.getOrCreateInstance(panel).hide();
+        }
+      } catch (error) {
+        if (error.name === "AbortError") return;
+        const current = document.getElementById("fleet-results");
+        if (current) showError(current, url);
+      }
+    }
+
+    function submitFilters() {
+      const params = new URLSearchParams(new FormData(form));
+      // Drop empty values so the URL stays readable and shareable.
+      for (const [key, value] of Array.from(params.entries())) {
+        if (value === "") params.delete(key);
+      }
+      const url = listUrl + (params.toString() ? "?" + params.toString() : "");
+      load(url);
+    }
+
+    form.addEventListener("submit", function (event) {
+      if (!window.fetch || !window.DOMParser) return; // graceful full-page fallback
+      event.preventDefault();
+      submitFilters();
+    });
+
+    // Selects and checkboxes apply immediately; text inputs wait for Enter or
+    // the Search Cars button to avoid a request on every keystroke.
+    form.querySelectorAll("select, input[type='checkbox']").forEach(function (field) {
+      field.addEventListener("change", function () {
+        if (window.innerWidth >= 992) submitFilters();
+      });
+    });
+
+    // Date changes should refresh the availability results too.
+    form.querySelectorAll("input[type='date']").forEach(function (field) {
+      field.addEventListener("change", function () {
+        if (window.innerWidth >= 992 && form.querySelector("#id_pickup_date").value &&
+            form.querySelector("#id_dropoff_date").value) {
+          submitFilters();
+        }
+      });
+    });
+
+    // Pagination inside the AJAX results loads the next page without a reload.
+    document.addEventListener("click", function (event) {
+      const link = event.target.closest("#fleet-results .pagination a.page-link");
+      if (!link || !window.fetch) return;
+      event.preventDefault();
+      load(link.href);
+    });
+  })();
+</script>
+{% endblock %}

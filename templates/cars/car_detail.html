@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+
+{% block title %}{{ car }} — SkyRent{% endblock %}
+
+{% block content %}
+<div class="container page-head">
+  <nav aria-label="Breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'cars:home' %}">Home</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'cars:list' %}">Browse Cars</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{{ car.make }} {{ car.model }}</li>
+    </ol>
+  </nav>
+</div>
+
+<div class="container pb-5">
+  <div class="row g-4">
+
+    <!-- ============================ CAR INFO ============================ -->
+    <div class="col-lg-7">
+      <article class="card overflow-hidden">
+        <div class="car-media detail-media">
+          {% if car.image_url %}
+            <img src="{{ car.image_url }}" alt="{{ car.year }} {{ car.make }} {{ car.model }}"
+                 onerror="this.classList.add('d-none'); this.nextElementSibling.classList.remove('d-none');">
+            <div class="placeholder-icon d-none"><i class="bi bi-car-front" aria-hidden="true"></i></div>
+          {% else %}
+            <div class="placeholder-icon"><i class="bi bi-car-front" aria-hidden="true"></i></div>
+          {% endif %}
+          <div class="car-chips">
+            <span class="chip chip-category">{{ car.category }}</span>
+            <span class="chip status-{{ car.status_tone|default:'ok' }}">{{ car.status_label|default:"Available" }}</span>
+          </div>
+          <span class="rate-chip">${{ car.daily_rate|floatformat:2 }}<small>/day</small></span>
+        </div>
+
+        <div class="card-body p-4">
+          <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+            <div>
+              <h1 class="h2 mb-1">{{ car.make }} {{ car.model }}</h1>
+              <p class="text-dim mb-0">
+                {{ car.year }} &middot; {{ car.category }} &middot; Pickup at {{ car.location }}
+              </p>
+            </div>
+            {% if car.is_available %}
+              <span class="badge badge-approved"><i class="bi bi-check-circle" aria-hidden="true"></i>Available to book</span>
+            {% else %}
+              <span class="badge badge-cancelled"><i class="bi bi-x-circle" aria-hidden="true"></i>Unavailable</span>
+            {% endif %}
+          </div>
+
+          <div class="spec-row my-4">
+            <span class="spec"><i class="bi bi-people" aria-hidden="true"></i>{{ car.seating_capacity }} seats</span>
+            <span class="spec"><i class="bi bi-gear" aria-hidden="true"></i>{{ car.transmission }}</span>
+            <span class="spec"><i class="bi bi-fuel-pump" aria-hidden="true"></i>{{ car.fuel_type }}</span>
+            <span class="spec"><i class="bi bi-calendar3" aria-hidden="true"></i>{{ car.year }}</span>
+            <span class="spec"><i class="bi bi-geo-alt" aria-hidden="true"></i>{{ car.location }}</span>
+          </div>
+
+          {% if car.is_busy %}
+            <div class="alert alert-warning mb-3">
+              <i class="bi bi-clock-history me-1" aria-hidden="true"></i>
+              This car is on rent today, but you can still request it for future dates.
+            </div>
+          {% endif %}
+
+          {% if car.description %}
+            <h2 class="h6 text-accent mt-4 mb-2">About this car</h2>
+            <p class="mb-0">{{ car.description|linebreaksbr }}</p>
+          {% endif %}
+
+          {% if car.feature_list %}
+            <h2 class="h6 text-accent mt-4 mb-2">Features</h2>
+            <div class="spec-row">
+              {% for feature in car.feature_list %}
+                <span class="spec"><i class="bi bi-check2" aria-hidden="true"></i>{{ feature }}</span>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      </article>
+    </div>
+
+    <!-- ============================ BOOKING WIDGET ============================ -->
+    <div class="col-lg-5" id="reserve">
+      <div class="card p-4 booking-card">
+        <div class="d-flex justify-content-between align-items-baseline gap-2 mb-1">
+          <h2 class="h5 mb-0"><i class="bi bi-calendar2-check me-2 text-accent" aria-hidden="true"></i>Reserve this car</h2>
+          <span class="text-accent fw-bold fs-5">${{ car.daily_rate|floatformat:2 }}<small class="fw-normal fs-6">/day</small></span>
+        </div>
+        <p class="small text-dim mb-3">Choose your dates — the estimated total updates automatically.</p>
+
+        {% if not car.is_available %}
+          <div class="alert mb-0">
+            <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
+            This vehicle is currently marked unavailable. Please
+            <a href="{% url 'cars:list' %}">browse the fleet</a> for another option.
+          </div>
+        {% else %}
+          <form method="post" id="bookingForm" novalidate>
+            {% csrf_token %}
+
+            <div class="row g-3">
+              <div class="col-sm-6">
+                <label class="form-label" for="{{ form.pickup_date.id_for_label }}">{{ form.pickup_date.label }}</label>
+                {{ form.pickup_date }}
+                {{ form.pickup_date.errors }}
+              </div>
+              <div class="col-sm-6">
+                <label class="form-label" for="{{ form.dropoff_date.id_for_label }}">{{ form.dropoff_date.label }}</label>
+                {{ form.dropoff_date }}
+                {{ form.dropoff_date.errors }}
+              </div>
+            </div>
+
+            <div class="glass p-3 my-3" id="priceBox">
+              <div class="d-flex justify-content-between small mb-1">
+                <span class="text-body-custom">Rental length</span>
+                <span class="text-accent" id="daysOut">— days</span>
+              </div>
+              <div class="d-flex justify-content-between small mb-2">
+                <span class="text-body-custom">Daily rate</span>
+                <span class="text-accent">${{ car.daily_rate|floatformat:2 }} / day</span>
+              </div>
+              <div class="divider my-2"></div>
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="fw-semibold">Estimated total</span>
+                <span class="fs-4 fw-bold text-accent" id="totalOut">$0.00</span>
+              </div>
+              <div class="small text-dim mt-1" id="dateHint">
+                <i class="bi bi-calendar3 me-1" aria-hidden="true"></i>Select pickup and return dates
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="{{ form.pickup_location.id_for_label }}">{{ form.pickup_location.label }}</label>
+              {{ form.pickup_location }}
+              {{ form.pickup_location.errors }}
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="{{ form.notes.id_for_label }}">{{ form.notes.label }}</label>
+              {{ form.notes }}
+              {{ form.notes.errors }}
+            </div>
+
+            {% if form.non_field_errors %}
+              <div class="alert mb-3">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <button type="submit" class="btn btn-accent w-100 py-2" id="bookBtn">
+              <i class="bi bi-send" aria-hidden="true"></i>Request Reservation
+            </button>
+
+            {% if not user.is_authenticated %}
+              <p class="small text-dim text-center mt-2 mb-0">
+                You'll be asked to sign in before the request is sent.
+              </p>
+            {% endif %}
+          </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% if similar_cars %}
+    <section class="similar-section" aria-labelledby="similar-heading">
+      <h2 class="h5 mb-3" id="similar-heading">Similar {{ car.category }} cars</h2>
+      <div class="row g-3">
+        {% for similar in similar_cars %}
+          <div class="col-md-6 col-xl-4">{% include "cars/_car_card.html" with car=similar %}</div>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function () {
+    const form = document.getElementById("bookingForm");
+    if (!form) return;
+
+    const RATE = parseFloat("{{ car.daily_rate }}");
+    const BUSY = {{ busy_ranges|safe }}; // [[pickup, dropoff], ...] ISO dates
+    const pickup = document.getElementById("id_pickup_date");
+    const dropoff = document.getElementById("id_dropoff_date");
+    const daysOut = document.getElementById("daysOut");
+    const totalOut = document.getElementById("totalOut");
+    const hint = document.getElementById("dateHint");
+    const button = document.getElementById("bookBtn");
+
+    const pad = (value) => String(value).padStart(2, "0");
+    const iso = (date) =>
+      date.getFullYear() + "-" + pad(date.getMonth() + 1) + "-" + pad(date.getDate());
+    const parse = (value) => {
+      const [year, month, day] = value.split("-").map(Number);
+      return new Date(year, month - 1, day);
+    };
+
+    function overlapsBusy(start, end) {
+      return BUSY.some(function (range) {
+        const busyStart = parse(range[0]);
+        const busyEnd = parse(range[1]);
+        return start < busyEnd && end > busyStart;
+      });
+    }
+
+    function update() {
+      const pickupValue = pickup.value;
+      const dropoffValue = dropoff.value;
+
+      if (pickupValue) {
+        const minimum = parse(pickupValue);
+        minimum.setDate(minimum.getDate() + 1);
+        const limit = iso(minimum);
+        dropoff.min = limit;
+        if (dropoffValue && parse(dropoffValue) <= parse(pickupValue)) {
+          dropoff.value = "";
+        }
+      }
+
+      const start = pickup.value;
+      const end = dropoff.value;
+      if (!start || !end) {
+        daysOut.textContent = "— days";
+        totalOut.textContent = "$0.00";
+        hint.innerHTML = '<i class="bi bi-calendar3 me-1" aria-hidden="true"></i>Select pickup and return dates';
+        hint.classList.remove("text-accent");
+        button.disabled = false;
+        return;
+      }
+
+      const startDate = parse(start);
+      const endDate = parse(end);
+      const days = Math.round((endDate - startDate) / 86400000);
+      const total = days * RATE;
+      daysOut.textContent = days + (days === 1 ? " day" : " days");
+      totalOut.textContent = "$" + total.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+
+      if (overlapsBusy(startDate, endDate)) {
+        hint.innerHTML = '<i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>Already booked for these dates — please choose another range.';
+        hint.classList.add("text-accent");
+        button.disabled = true;
+      } else {
+        hint.innerHTML = '<i class="bi bi-check2-circle me-1" aria-hidden="true"></i>' +
+          days + " day" + (days === 1 ? "" : "s") + " at $" + RATE.toFixed(2) + " per day";
+        hint.classList.remove("text-accent");
+        button.disabled = false;
+      }
+    }
+
+    [pickup, dropoff].forEach(function (field) {
+      if (field) field.addEventListener("change", update);
+    });
+    update();
+  })();
+</script>
+{% endblock %}

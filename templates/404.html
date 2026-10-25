@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Page not found — SkyRent{% endblock %}
+
+{% block content %}
+<div class="container page-centered">
+  <div class="card p-4 p-md-5 text-center">
+    <div class="auth-icon auth-icon-lg">
+      <i class="bi bi-signpost-2" aria-hidden="true"></i>
+    </div>
+    <div class="section-kicker">Error 404</div>
+    <h1 class="h2 mt-2">You took a wrong turn</h1>
+    <p class="text-dim mx-auto measure-44">
+      The page you're looking for doesn't exist or has been moved.
+      Let's get you back on the road.
+    </p>
+    <div class="d-flex justify-content-center gap-3 flex-wrap mt-4">
+      <a href="{% url 'cars:home' %}" class="btn btn-accent px-4"><i class="bi bi-house me-1"></i>Back home</a>
+      <a href="{% url 'cars:list' %}" class="btn btn-outline-accent px-4"><i class="bi bi-car-front me-1"></i>Browse cars</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

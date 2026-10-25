@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — SkyRent{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="dashboard-shell">
+
+    <!-- ============================ SIDE NAV ============================ -->
+    <aside class="side-nav">
+      <div class="side-title"><i class="bi bi-bank me-1"></i>Management</div>
+      <a href="{% url 'dashboard:index' %}"
+         class="{% if request.resolver_match.url_name == 'index' %}active{% endif %}">
+        <i class="bi bi-speedometer2"></i>Overview
+      </a>
+      <a href="{% url 'dashboard:manage_cars' %}"
+         class="{% if request.resolver_match.url_name == 'manage_cars' or request.resolver_match.url_name == 'manage_car_edit' or request.resolver_match.url_name == 'manage_car_create' %}active{% endif %}">
+        <i class="bi bi-car-front"></i>Fleet
+      </a>
+      <a href="{% url 'dashboard:manage_bookings' %}"
+         class="{% if 'booking' in request.resolver_match.url_name %}active{% endif %}">
+        <i class="bi bi-journal-check"></i>Reservations
+        <span class="badge badge-pending ms-auto">live</span>
+      </a>
+      <a href="{% url 'dashboard:manage_customers' %}"
+         class="{% if request.resolver_match.url_name == 'manage_customers' %}active{% endif %}">
+        <i class="bi bi-people"></i>Customers
+      </a>
+
+      <div class="side-title mt-3"><i class="bi bi-lightning me-1"></i>Quick actions</div>
+      <a href="{% url 'dashboard:manage_car_create' %}"
+         class="{% if request.resolver_match.url_name == 'manage_car_create' %}active{% endif %}">
+        <i class="bi bi-plus-lg"></i>Add a car
+      </a>
+      <a href="{% url 'cars:list' %}"><i class="bi bi-box-arrow-up-right"></i>View public site</a>
+    </aside>
+
+    <!-- ============================ CONTENT ============================ -->
+    <section>
+      {% block dash_content %}{% endblock %}
+    </section>
+  </div>
+</div>
+{% endblock %}
